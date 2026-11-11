@@ -8,6 +8,7 @@ The audience is general Hammerspoon users who install a variant and customize it
 `README.md` at the root is a short user-facing overview; update it when a variant is added or removed.
 
 ```
+LICENSE            MIT
 install.sh         Pick one or more variants; writes ~/.hammerspoon/init.lua that calls loader.lua
 loader.lua         Loads the picked variants (pcall each), tracks keys, warns on key conflicts
 tests/
