@@ -14,7 +14,7 @@ tests/
   install-test.sh  Checks install.sh end to end against a throwaway $HOME
 variants/
   windows-compat/  Windows key bindings on macOS (Ctrl→⌘, Win→⌥ snap/shortcuts, Alt+Tab, Finder, screenshots)
-  window-manager/  App switching (⌥1–8) + window placement (⌥9/0/-/M)
+  window-manager/  App switching (⌥1–8) + window placement (⌥9/0/=/-/G/M)
 ```
 
 Each variant directory contains exactly:

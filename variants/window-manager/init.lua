@@ -9,7 +9,9 @@
 --            1 VS Code / 2 PyCharm / 3 cmux / 4 Sourcetree / 5 Slack / 6 Chrome / 7 Claude / 8 メモ
 --   ⌥+9      左に配置。続けて押すと幅が 1/2 → 2/3 → 1/3
 --   ⌥+0      右に配置。続けて押すと幅が 1/2 → 2/3 → 1/3
---   ⌥+-      最大化。最大化中に押すと元の大きさに戻す
+--   ⌥+=      最大化
+--   ⌥+-      元の大きさに戻す（⌥+9 / 0 / = / g で動かす前の位置と大きさ）
+--   ⌥+g      グリッドを表示し、マス目を選んで手で配置する
 --   ⌥+m      最小化（Dock にしまう。⌥+数字でそのアプリを選ぶと戻る）
 --
 -- windows-compat と組み合わせて導入した場合、windows-compat が ⌥ を Win キーとして使うため、
@@ -57,9 +59,14 @@ local APP_KEYS = {
 local WINDOW_KEYS = {
   left     = "9",
   right    = "0",
-  maximize = "-",
+  maximize = "=",
+  restore  = "-",
+  grid     = "g",
   minimize = "m",
 }
+
+-- ⌥+g のグリッドのマス目（横x縦）
+local GRID_SIZE = "6x4"
 
 -- ▲▲▲ 変更箇所ここまで ▲▲▲ ------------------------------------------
 
@@ -74,7 +81,8 @@ end
 WindowManager = WindowManager or {}
 local M = WindowManager
 
-M.beforeMaximize = M.beforeMaximize or {}  -- ウィンドウID → 最大化する前の位置と大きさ
+M.original = M.original or {}  -- ウィンドウID → 本設定で動かす前の位置と大きさ
+M.placed   = M.placed or {}    -- ウィンドウID → 本設定が最後に置いた位置と大きさ
 
 hs.window.animationDuration = 0
 
@@ -245,8 +253,15 @@ local function focusApp(spec)
 end
 
 -- ---------------------------------------------------------------------
--- ウィンドウ配置（⌥+9 / 0 / - / m）
+-- ウィンドウ配置（⌥+9 / 0 / = / - / g / m）
 -- ---------------------------------------------------------------------
+
+-- 「元の大きさ」に戻せるよう、本設定で動かす前の位置と大きさをウィンドウごとに覚えておく。
+-- 続けて配置を変えても最初の位置を保つ。ただし本設定で動かした後に手で動かしていれば、
+-- その位置を新しい「元の大きさ」とする。
+local function copyFrame(f)
+  return { x = f.x, y = f.y, w = f.w, h = f.h }
+end
 
 -- 配置に使う領域（メニューバーと Dock を除いた範囲）
 local function workArea(screen)
@@ -259,6 +274,26 @@ local TOLERANCE = 20
 local function near(f, t)
   return math.abs(f.x - t.x) <= TOLERANCE and math.abs(f.y - t.y) <= TOLERANCE
     and math.abs(f.w - t.w) <= TOLERANCE and math.abs(f.h - t.h) <= TOLERANCE
+end
+
+-- 配置を変える直前に呼ぶ。元の位置と大きさを覚える
+local function remember(w)
+  local id, f = w:id(), w:frame()
+  local placed = M.placed[id]
+  if not M.original[id] or not (placed and near(f, placed)) then
+    M.original[id] = copyFrame(f)
+  end
+end
+
+-- 配置を変えた直後に呼ぶ。本設定が置いた位置を覚える（手で動かしたかの判定に使う）
+local function placedBy(w)
+  M.placed[w:id()] = copyFrame(w:frame())
+end
+
+local function place(w, frame)
+  remember(w)
+  w:setFrame(frame, 0)
+  placedBy(w)
 end
 
 local SNAP_RATIOS = { 1 / 2, 2 / 3, 1 / 3 }
@@ -278,24 +313,35 @@ local function snap(side)
   for i, r in ipairs(SNAP_RATIOS) do
     if near(cur, snapFrame(a, side, r)) then nextIdx = i % #SNAP_RATIOS + 1 break end
   end
-  w:setFrame(snapFrame(a, side, SNAP_RATIOS[nextIdx]), 0)
+  place(w, snapFrame(a, side, SNAP_RATIOS[nextIdx]))
 end
 
--- 最大化。最大化中に押すと、最大化する前の位置と大きさに戻す
-local function toggleMaximize()
+local function maximize()
+  local w = hs.window.focusedWindow()
+  if w then place(w, workArea(w:screen())) end
+end
+
+-- 本設定で動かす前の位置と大きさに戻す
+local function restore()
   local w = hs.window.focusedWindow()
   if not w then return end
-  local a = workArea(w:screen())
   local id = w:id()
-  local prev = M.beforeMaximize[id]
-  if near(w:frame(), a) and prev then
-    w:setFrame(prev, 0)
-    M.beforeMaximize[id] = nil
-  else
-    local f = w:frame()
-    M.beforeMaximize[id] = { x = f.x, y = f.y, w = f.w, h = f.h }
-    w:setFrame(a, 0)
-  end
+  local original = M.original[id]
+  if not original then return end
+  w:setFrame(original, 0)
+  M.original[id] = nil
+  M.placed[id] = nil
+end
+
+-- グリッドを表示し、フォーカス中のウィンドウを手で配置する。
+-- マス目の文字キーを2つ押すと、その2マスを対角とする範囲に配置される。Esc で閉じる。
+local function showGrid()
+  local w = hs.window.focusedWindow()
+  if not w then return end
+  remember(w)
+  hs.grid.show(function()
+    if hs.window.get(w:id()) then placedBy(w) end
+  end)
 end
 
 local function minimize()
@@ -322,7 +368,12 @@ end
 
 bind(MOD, WINDOW_KEYS.left,     function() snap("left") end)
 bind(MOD, WINDOW_KEYS.right,    function() snap("right") end)
-bind(MOD, WINDOW_KEYS.maximize, toggleMaximize)
+bind(MOD, WINDOW_KEYS.maximize, maximize)
+bind(MOD, WINDOW_KEYS.restore,  restore)
+bind(MOD, WINDOW_KEYS.grid,     showGrid)
 bind(MOD, WINDOW_KEYS.minimize, minimize)
+
+hs.grid.setGrid(GRID_SIZE)
+hs.grid.setMargins("0x0")
 
 hs.alert.show("ウィンドウマネージャ 読み込み完了", 0.8)

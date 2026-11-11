@@ -6,7 +6,7 @@
 | 設定 | 対象 | 概要 |
 |---|---|---|
 | [windows-compat](variants/windows-compat/) | 一時的に Mac を使う Windows ユーザー | Ctrl 系ショートカット・Win キー操作・Alt+Tab などを Windows と同じ位置のキーで使えるようにする |
-| [window-manager](variants/window-manager/) | キーボードでアプリとウィンドウを操作したい人 | ⌥+数字でアプリを切り替え、⌥+キーでウィンドウを左右・最大化・最小化する |
+| [window-manager](variants/window-manager/) | キーボードでアプリとウィンドウを操作したい人 | ⌥+数字でアプリを切り替え、⌥+キーでウィンドウを左右・最大化・グリッド配置・最小化する |
 
 ## 導入
 
