@@ -13,7 +13,7 @@ loader.lua         Loads the picked variants (pcall each), tracks keys, warns on
 tests/
   install-test.sh  Checks install.sh end to end against a throwaway $HOME
 .github/workflows/
-  test.yml         CI: install-test.sh + sh -n on macOS, luac5.4 -p on Ubuntu
+  test.yml         CI: runs tests/install-test.sh on macOS
 variants/
   windows-compat/  Windows key bindings on macOS (Ctrl→⌘, Win→⌥ snap/shortcuts, Alt+Tab, Finder, screenshots)
   window-manager/  App switching (⌥1–8) + window placement (⌥9/0/=/-/G/M)
@@ -87,8 +87,8 @@ touched). Run it whenever `install.sh` changes.
 - Reload: `hs.reload()` in the Hammerspoon console (install.sh does this via `hs` CLI if available).
 - Accessibility permission is required for all variants.
 - Syntax check (if Lua is installed): `luac -p loader.lua variants/*/init.lua`; `sh -n install.sh`.
-- CI (`.github/workflows/test.yml`) runs the install test and both syntax checks on every PR and
-  push to main. When adding a test, add it to the workflow too.
+- CI (`.github/workflows/test.yml`) runs `tests/install-test.sh` on macOS for every PR and push to
+  main. When adding a test, add it to the workflow too.
 
 If you change behavior you cannot verify on a Mac, list what needs checking in the PR description
 (not in READMEs or comments).
