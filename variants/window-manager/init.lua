@@ -340,13 +340,28 @@ end
 
 -- グリッドを表示し、フォーカス中のウィンドウを手で配置する。
 -- マス目の文字キーを2つ押すと、その2マスを対角とする範囲に配置される。Esc で閉じる。
+-- hs.grid は表示中の Tab / ⇧Tab で配置するウィンドウを切り替えるが、切り替えた先は ⌥- で
+-- 戻せないため使わせない。同じキーの hs.hotkey は後から有効にしたものが優先されるので、
+-- グリッドを表示した後に何もしない Tab / ⇧Tab を割り当て、閉じたら消す。
+local function unblockGridKeys()
+  for _, hk in ipairs(M.gridBlock or {}) do hk:delete() end
+  M.gridBlock = nil
+end
+
 local function showGrid()
   local w = hs.window.focusedWindow()
   if not w then return end
   remember(w)
+  unblockGridKeys()
   hs.grid.show(function()
+    unblockGridKeys()
     if hs.window.get(w:id()) then placedBy(w) end
   end)
+  local noop = function() end
+  M.gridBlock = {
+    hs.hotkey.bind({}, "tab", noop),
+    hs.hotkey.bind({ "shift" }, "tab", noop),
+  }
 end
 
 local function focusedId()
