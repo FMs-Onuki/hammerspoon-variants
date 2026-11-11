@@ -41,7 +41,8 @@
 
 ⌥9 / ⌥0 / ⌥= / ⌥G を続けて使っても、⌥- は最初に動かす前の位置に戻す。
 途中で手でウィンドウを動かした場合は、その位置に戻す。
-戻す位置がないとき（まだ動かしていない、または Hammerspoon を再読み込みした）は、画面にその旨が表示される。
+戻す位置がないとき（まだ動かしていない、Hammerspoon を再読み込みした、すでに元の位置にある）は、
+画面に「No undo history」と表示される。
 
 #### グリッドで手動配置（⌥G）
 
@@ -79,7 +80,7 @@ windows-compat は ⌥ を Win キー（⌥←/→、⌥1〜9、⌥E 等）と�
 アプリの bundle ID は次のコマンドで確認できる。
 
 ```sh
-osascript -e 'id of app "Codex"'
+osascript -e 'id of app "Slack"'
 ```
 
 本設定は `hs.window.animationDuration` を 0 にする（ウィンドウを動かすときのアニメーションをなくす）。

@@ -28,6 +28,14 @@ mkdir -p "$COPY"
 HOME="$WORK/home"
 export HOME
 mkdir -p "$HOME/.hammerspoon"
+
+# install.sh は hs コマンドで起動中の Hammerspoon を再読み込みする。
+# 実行中の Hammerspoon に触れないよう、常に失敗する hs を PATH の先頭に置く。
+mkdir -p "$WORK/bin"
+printf '#!/bin/sh\nexit 1\n' > "$WORK/bin/hs"
+chmod +x "$WORK/bin/hs"
+PATH="$WORK/bin:$PATH"
+export PATH
 cd "$COPY" || exit 1
 
 echo "既存の init.lua がある状態で導入する"
