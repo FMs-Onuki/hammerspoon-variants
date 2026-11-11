@@ -13,24 +13,18 @@
 --   3. ⌘Tab → ウィンドウ単位の切替、⌘F4 → ウィンドウを閉じる
 --   4. ⌥←/→/↑ → 左半分/右半分/最大化、⌥↓ → 元のサイズに戻す（戻す対象がなければ最小化）
 --   5. ⌥D → デスクトップ表示の切替、⌥E → Finder、⌥L → 画面ロック、⌥R → ファイル名を指定して実行
---   6. Finder: Enter → 開く、F2 → 名前の変更、Delete → ゴミ箱へ移動、Backspace → 戻る、
---      ⌃X → ⌃V で移動
---   7. PrintScreen → 全画面をクリップボードへ、⌥⇧S → 範囲を選択してクリップボードへ
---   8. ⌥/ → キー対応表の表示（初回の読み込み時にも表示する）
---   9. ⌘` → 英数とかなの切替
---  10. ⌥V → クリップボード履歴から選択して貼り付け
---  11. ⌃⇧Esc → アクティビティモニタ、⌃⌘Delete → 強制終了ダイアログ
---  12. ⌥1〜⌥9 → TASKBAR_APPS のアプリを起動・前面化（前面のアプリではウィンドウを巡回）
---  13. マウスホイールのスクロール方向を反転する（トラックパッドは対象外）
---  14. F5 → 再読み込み（⌘R）、F11 → フルスクリーンの切替
---  15. メニューバーの Win 表示のクリック、または ⌃⌥⌘W で有効/無効を切り替える
+--   6. ⌥/ → キー対応表の表示（初回の読み込み時にも表示する）
+--   7. ⌥V → クリップボード履歴から選択して貼り付け
+--   8. ⌥1〜⌥9 → TASKBAR_APPS のアプリを起動・前面化（前面のアプリではウィンドウを巡回）
+--   9. F5 → 再読み込み（⌘R）
+--  10. メニューバーの Win 表示のクリック、または ⌃⌥⌘W で有効/無効を切り替える
 --
 -- 設定変更後は Hammerspoon コンソールで hs.reload() を実行する。
 -- =====================================================================
 
 -- ▼▼▼ 環境に合わせて変更する箇所 ▼▼▼ -----------------------------------
 
--- Ctrl 系の変換（機能 1, 2, 6, F5）の対象外とするアプリの bundle ID。
+-- Ctrl 系の変換（機能 1, 2, 9）の対象外とするアプリの bundle ID。
 -- ⌃ 付きのキーに固有の機能を割り当てているアプリを登録する。
 -- Win 系（⌥）のショートカットは、ここに登録したアプリでも有効である。
 local EXCLUDE_APPS = {
@@ -70,9 +64,6 @@ local TASKBAR_APPS = {
 
 -- クリップボード履歴の保持件数
 local CLIP_MAX = 20
-
--- マウスホイールのスクロール方向を反転するか。macOS のナチュラルスクロールが有効な場合のみ反転する。
-local REVERSE_MOUSE_SCROLL = true
 
 -- 有効/無効を切り替えるホットキー
 local TOGGLE_MODS, TOGGLE_KEY = { "ctrl", "alt", "cmd" }, "w"
@@ -210,27 +201,7 @@ local function showRunDialog()
 end
 
 -- ---------------------------------------------------------------------
--- 7. スクリーンショット
--- ---------------------------------------------------------------------
--- macOS は合成したキー入力によるスクリーンショットのショートカットを受け付けない場合があるため、
--- screencapture コマンドを直接実行する。-c はクリップボードへの保存を表す。
-local function capture(args)
-  hs.task.new("/usr/sbin/screencapture", nil, args):start()
-end
-
--- ---------------------------------------------------------------------
--- 9. 英数 / かな の切替
--- ---------------------------------------------------------------------
--- 入力ソースの ID は IME により異なるため、英数キー・かなキーのイベントを送出して切り替える。
--- hs.keycodes.currentMethod() は入力メソッド（日本語入力など）の使用中のみ値を返す。
-local KEY_EISU, KEY_KANA = 102, 104
-
-local function toggleIME()
-  hs.eventtap.keyStroke({}, hs.keycodes.currentMethod() and KEY_EISU or KEY_KANA, 0)
-end
-
--- ---------------------------------------------------------------------
--- 10. クリップボード履歴
+-- 7. クリップボード履歴
 -- ---------------------------------------------------------------------
 -- 履歴は hs.settings に保存し、Hammerspoon の再起動後も保持する。
 local CLIP_KEY = "WinCompat.clipHistory"
@@ -271,18 +242,7 @@ local function showClipHistory()
 end
 
 -- ---------------------------------------------------------------------
--- 11. タスクマネージャ / 強制終了
--- ---------------------------------------------------------------------
-local function openActivityMonitor()
-  hs.application.launchOrFocusByBundleID("com.apple.ActivityMonitor")
-end
-
-local function openForceQuit()
-  hs.eventtap.keyStroke({ "cmd", "alt" }, "escape", 0)
-end
-
--- ---------------------------------------------------------------------
--- 12. タスクバー相当のアプリ起動（⌥1〜⌥9）
+-- 8. タスクバー相当のアプリ起動（⌥1〜⌥9）
 -- ---------------------------------------------------------------------
 local function runningApp(spec)
   for _, id in ipairs(spec.bundleIDs or {}) do
@@ -327,39 +287,7 @@ local function focusTaskbarApp(spec)
 end
 
 -- ---------------------------------------------------------------------
--- 13. マウスホイールのスクロール方向
--- ---------------------------------------------------------------------
--- トラックパッドとマジックマウスのスクロールは連続値（isContinuous = 1）として届く。
--- 連続値でないイベント（ホイールマウス）のみ、縦横の移動量の符号を反転する。
-local P = hs.eventtap.event.properties
-local SCROLL_AXES = {
-  P.scrollWheelEventDeltaAxis1, P.scrollWheelEventDeltaAxis2,
-  P.scrollWheelEventPointDeltaAxis1, P.scrollWheelEventPointDeltaAxis2,
-  P.scrollWheelEventFixedPtDeltaAxis1, P.scrollWheelEventFixedPtDeltaAxis2,
-}
-
-M.scrollTap = hs.eventtap.new({ hs.eventtap.event.types.scrollWheel }, function(e)
-  if e:getProperty(P.scrollWheelEventIsContinuous) ~= 0 then return false end
-  for _, axis in ipairs(SCROLL_AXES) do
-    e:setProperty(axis, -e:getProperty(axis))
-  end
-  return false
-end)
-
-local function shouldReverseScroll()
-  return REVERSE_MOUSE_SCROLL and hs.mouse.scrollDirection() == "natural"
-end
-
--- ---------------------------------------------------------------------
--- 14. F11（フルスクリーン）
--- ---------------------------------------------------------------------
-local function toggleFullScreen()
-  local win = hs.window.focusedWindow()
-  if win then win:toggleFullScreen() end
-end
-
--- ---------------------------------------------------------------------
--- 8. キー対応表
+-- 6. キー対応表
 -- ---------------------------------------------------------------------
 local CHEATSHEET = table.concat({
   "Windows互換モード キー対応表",
@@ -370,11 +298,8 @@ local CHEATSHEET = table.concat({
   "Alt+Tab / Alt+F4        ⌘Tab / ⌘F4",
   "Win+← / → / ↑ / ↓       ⌥← / → / ↑ / ↓",
   "Win+D / E / L / R       ⌥D / E / L / R",
-  "PrintScreen / Win+⇧+S   PrintScreen / ⌥⇧S",
   "Win+V / Win+1〜9        ⌥V / ⌥1〜9",
-  "Alt+` / Ctrl+Shift+Esc   ⌘` / ⌃⇧Esc",
-  "Ctrl+Alt+Del            ⌃⌘Delete",
-  "F5 / F11                F5 / F11",
+  "F5                      F5",
   "",
   "⌥/ 対応表   ⌃⌥⌘W 有効/無効",
 }, "\n")
@@ -421,11 +346,6 @@ for i, spec in ipairs(TASKBAR_APPS) do
   if i > 9 then break end
   WIN_ACTIONS[K[tostring(i)]] = function() focusTaskbarApp(spec) end
 end
--- ⌥⇧（Win+Shift）のショートカット
-local WIN_SHIFT_ACTIONS = {
-  [K.s] = function() capture({ "-i", "-c" }) end,  -- 範囲選択
-}
-local PRINT_SCREEN = K.f13  -- Windows キーボードの PrintScreen は macOS では F13 として届く
 
 -- keycode → Ctrl 変換ルール
 local ctrlRules = {}
@@ -439,7 +359,6 @@ end
 if HSVariants then
   local claim = HSVariants.claim
   for code in pairs(WIN_ACTIONS) do claim({ "alt" }, code) end
-  for code in pairs(WIN_SHIFT_ACTIONS) do claim({ "alt", "shift" }, code) end
   for code in pairs(ctrlRules) do
     claim({ "ctrl" }, code)
     claim({ "ctrl", "shift" }, code)
@@ -449,13 +368,7 @@ if HSVariants then
     claim({ "ctrl", "shift" }, code)
   end
   claim({ "ctrl" }, K.delete)
-  claim({}, PRINT_SCREEN)
   claim({}, K.f5)
-  claim({}, K.f11)
-  claim({ "cmd" }, K["`"])
-  claim({ "ctrl", "shift" }, K.escape)
-  claim({ "ctrl", "cmd" }, K.delete)
-  claim({ "ctrl", "cmd" }, K.forwarddelete)
 end
 
 local CONSUME = { consume = true }
@@ -463,86 +376,26 @@ local CONSUME = { consume = true }
 -- macOS が fn フラグ付きで送出するキー。書き換え後のキーに合わせて fn フラグを設定する。
 local FN_KEYS = {
   [K.left] = true, [K.right] = true, [K.up] = true, [K.down] = true,
-  [K.home] = true, [K["end"]] = true, [K.forwarddelete] = true,
+  [K.home] = true, [K["end"]] = true,
 }
 
 local function to(code, flags) return { code = code, flags = flags } end
 
--- フォーカスが文字入力欄（Finder の名前の変更中など）にあるか
-local function isEditingText()
-  local el = hs.uielement.focusedElement()
-  local role = el and el:role()
-  return role == "AXTextField" or role == "AXTextArea"
-end
-
--- 6. Finder 固有の処理。対象外であれば nil を返す。
-local function finderRule(code, f)
-  local plain = not f.ctrl and not f.cmd and not f.alt and not f.shift
-  if plain and (code == K["return"] or code == K.f2 or code == K.forwarddelete
-                or code == K.delete) then
-    if isEditingText() then return nil end
-    if code == K["return"]     then return to(K.down, { cmd = true }) end    -- 開く
-    if code == K.f2            then return to(K["return"], {}) end          -- 名前の変更
-    if code == K.forwarddelete then return to(K.delete, { cmd = true }) end  -- ゴミ箱へ移動
-    if code == K.delete        then return to(K["["], { cmd = true }) end    -- 戻る
-  end
-
-  -- 切り取りと貼り付けによる移動。Finder の ⌘X はファイルに作用しないため、
-  -- ⌃X はコピーとして扱い、続く ⌃V を移動（⌘⌥V）に変換する。
-  if f.ctrl and not f.cmd and not f.alt and not f.shift and not isEditingText() then
-    if code == K.x then
-      M.finderCut = true
-      return to(K.c, { cmd = true })
-    end
-    if code == K.c then M.finderCut = false end
-    if code == K.v and M.finderCut then
-      M.finderCut = false
-      return to(K.v, { cmd = true, alt = true })
-    end
-  end
-  return nil
-end
-
 local function decide(code, f, isRepeat)
-  -- Win 系（⌥ のみ、または ⌥⇧）
-  if f.alt and not f.ctrl and not f.cmd then
-    local action = (f.shift and WIN_SHIFT_ACTIONS or WIN_ACTIONS)[code]
+  -- Win 系（⌥ のみ）
+  if f.alt and not f.ctrl and not f.cmd and not f.shift then
+    local action = WIN_ACTIONS[code]
     if action then
       if not isRepeat then defer(action) end
       return CONSUME
     end
   end
 
-  -- 除外アプリでも有効なショートカット
-  local global
-  local noMods = not f.ctrl and not f.cmd and not f.alt
-  if code == PRINT_SCREEN and noMods then
-    global = function() capture({ "-c" }) end
-  elseif code == K.f11 and noMods and not f.shift then
-    global = toggleFullScreen
-  elseif code == K["`"] and f.cmd and not f.ctrl and not f.alt and not f.shift then
-    global = toggleIME                                                  -- Alt+`
-  elseif code == K.escape and f.ctrl and f.shift and not f.cmd and not f.alt then
-    global = openActivityMonitor                                        -- Ctrl+Shift+Esc
-  elseif (code == K.delete or code == K.forwarddelete)
-      and f.ctrl and f.cmd and not f.alt and not f.shift then
-    global = openForceQuit                                              -- Ctrl+Alt+Del
-  end
-  if global then
-    if not isRepeat then defer(global) end
-    return CONSUME
-  end
-
   local bundleID = M.frontBundleID
   if EXCLUDE_APPS[bundleID] then return nil end
 
-  if code == K.f5 and noMods and not f.shift then
+  if code == K.f5 and not f.ctrl and not f.cmd and not f.alt and not f.shift then
     return to(K.r, { cmd = true })                                      -- 再読み込み
-  end
-
-  if bundleID == FINDER then
-    local rule = finderRule(code, f)
-    if rule then return rule end
   end
 
   local shift = f.shift or nil
@@ -604,9 +457,6 @@ M.tapWatchdog = hs.timer.new(5, function()
     print("[wincompat] eventtap を再開")
     M.keyTap:start()
   end
-  if M.enabled and shouldReverseScroll() and not M.scrollTap:isEnabled() then
-    M.scrollTap:start()
-  end
 end)
 
 -- ---------------------------------------------------------------------
@@ -646,7 +496,7 @@ M.hotkeys = {
 }
 
 -- ---------------------------------------------------------------------
--- 15. 有効 / 無効の切替
+-- 10. 有効 / 無効の切替
 -- ---------------------------------------------------------------------
 M.menubar = M.menubar or hs.menubar.new()
 
@@ -659,12 +509,10 @@ local function setEnabled(on)
     M.appWatcher:start()
     M.frontBundleID = currentBundleID()
     M.clipWatcher:start()
-    if shouldReverseScroll() then M.scrollTap:start() end
     for _, hk in ipairs(M.hotkeys) do hk:enable() end
   else
     M.keyTap:stop()
     M.clipWatcher:stop()
-    M.scrollTap:stop()
     M.tapWatchdog:stop()
     M.appWatcher:stop()
     for _, hk in ipairs(M.hotkeys) do hk:disable() end
