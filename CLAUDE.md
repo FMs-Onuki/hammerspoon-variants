@@ -51,6 +51,8 @@ The SMC-PAD MIDI config lives in the separate `hammerspoon-smcpad` repo.
   up / reused across `hs.reload()`.
 - Apps are resolved by `bundleIDs` (in order) with `name` as fallback; missing apps must not error.
 - The variant must not change macOS system settings; quitting Hammerspoon undoes everything.
+- If a variant changes a Hammerspoon-wide value (e.g. `hs.window.animationDuration`), say so in its README.
+- Key bindings assume the US keyboard layout; note layout-dependent keys in the variant README.
 - Language: comments, READMEs, and commit messages in **Japanese** (READMEs use the plain
   `である` style). Identifiers in English.
 - When keys or settings change, update the header comment in `init.lua` and the `README.md` together.
