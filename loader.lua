@@ -4,7 +4,7 @@
 -- variants/ 配下の設定のうち、選んだものだけを読み込む。
 -- ~/.hammerspoon/init.lua は install.sh が生成し、次の形でこのファイルを呼び出す。
 --
---   dofile("/path/to/hammerspoon-variants/loader.lua").load({ "windows-compat", "tiling-wm" })
+--   dofile("/path/to/hammerspoon-variants/loader.lua").load({ "windows-compat", "window-manager" })
 --
 -- 読み込み中に登録されたホットキーを設定ごとに記録し、同じキーを複数の設定が使っていれば
 -- 起動時に警告する。設定から参照できるよう、グローバルな表 HSVariants に次を用意する。

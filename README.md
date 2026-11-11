@@ -6,7 +6,7 @@
 | 設定 | 対象 | 概要 |
 |---|---|---|
 | [windows-compat](variants/windows-compat/) | 一時的に Mac を使う Windows ユーザー | Ctrl 系ショートカット・Win キー操作・Alt+Tab などを Windows と同じ位置のキーで使えるようにする |
-| [tiling-wm](variants/tiling-wm/) | キーボードでウィンドウを操作したい人 | ウィンドウの自動整列・スナップ・アプリ切替をキーボードだけで行う |
+| [window-manager](variants/window-manager/) | キーボードでアプリとウィンドウを操作したい人 | ⌥+数字でアプリを切り替え、⌥+キーでウィンドウを左右・最大化・グリッド配置・最小化する |
 
 ## 導入
 
@@ -15,52 +15,27 @@
 2. リポジトリのルートで `install.sh` を実行し、使う設定を選ぶ。
 
 ```sh
-./install.sh                            # 一覧から番号で選ぶ（例: 1 2 で両方）
-./install.sh windows-compat             # 1つだけ導入
-./install.sh windows-compat tiling-wm   # 組み合わせて導入
-./install.sh --list                     # 導入できる設定の一覧
-./install.sh --uninstall                # 導入前の init.lua に戻す
+./install.sh                                 # 一覧から番号で選ぶ（例: 1 2 で両方）
+./install.sh windows-compat                  # 1つだけ導入
+./install.sh windows-compat window-manager   # 組み合わせて導入
+./install.sh --list                          # 導入できる設定の一覧
+./install.sh --uninstall                     # 導入前の init.lua に戻す
 ```
 
 `~/.hammerspoon/init.lua` には、選んだ設定を読み込む数行のファイルが作られる。
 導入前の `init.lua` は `init.lua.before-variants` に退避される。
 選び直すときは、`install.sh` をもう一度実行するだけでよい。リポジトリを移動したときも再実行する。
 
+初めて導入したときは、`install.sh` から Hammerspoon を再読み込みできないことがある。その場合は
+メニューバーの Hammerspoon アイコン → Reload Config で再読み込みする。2回目以降は `install.sh` が自動で再読み込みする。
+
 キー割り当てやカスタマイズ方法は、各設定の README.md を参照する。
 いずれの設定も macOS のシステム設定は変更しない。Hammerspoon を終了すると、すべての割り当てが解除される。
 
 ## 組み合わせたときのキー
 
-- windows-compat と tiling-wm を組み合わせると、windows-compat が ⌥ を Win キーとして使うため、
-  tiling-wm の修飾キーが ⌥ → ⌃⌥、⌥⇧ → ⌃⌥⇧、⌃⌥ → ⌃⌥⌘ に変わる（詳細は [tiling-wm](variants/tiling-wm/)）。
+- windows-compat と window-manager を組み合わせると、windows-compat が ⌥ を Win キーとして使うため、
+  window-manager の修飾キーが ⌥ → ⌃⌥ に変わる（詳細は [window-manager](variants/window-manager/)）。
 - 読み込み時に、複数の設定が同じキーを使っていないかを確認する。重複があれば画面に警告が表示され、
   Hammerspoon コンソールに `[variants] キーの重複:` として一覧が出る。各設定の修飾キーやキーを変更して解消する。
 - 1つの設定でエラーが起きても、残りの設定は読み込まれる。エラーは画面と Hammerspoon コンソールに表示される。
-
-## 設定を追加する
-
-`variants/<名前>/init.lua` を置くと、`install.sh` の一覧に自動で表示され、他の設定と組み合わせられる。
-一覧の説明には同じディレクトリの `README.md` の最初の見出しが使われる。
-他の設定と問題なく組み合わせるため、次の決まりに従う。
-
-- `init.lua` 1ファイルで動くようにする。他の設定のコードは読み込まない（必要な処理は複製する）。
-- ホットキーやウォッチャーなど長く使うオブジェクトは、設定ごとに名前の異なるグローバルな表
-  （例: `MyTools = MyTools or {}`）に保持する。`local` 変数だけで保持すると GC で回収されて止まる。
-  他の設定の表（`WinCompat`、`TilingWM`）や `HSVariants` は書き換えない。
-- キーは `hs.hotkey.bind` / `hs.hotkey.new` で割り当てる。これらは重複の確認の対象に自動で含まれる。
-  `hs.eventtap` でキーを処理する場合は、使うキーを `HSVariants.claim(修飾キー, キー)` で登録する。
-- 特定の設定と組み合わせたときだけ動作を変える場合は、`HSVariants.has("設定名")` で判定する。
-  読み込み順に関係なく判定できる。単独で使われた場合は `HSVariants` がないため、`if HSVariants and ...` とする。
-- `hs.window.animationDuration` など Hammerspoon 全体に効く値を変える場合は、README に書いておく。
-
-```lua
-MyTools = MyTools or {}
-local M = MyTools
-
-local MOD = { "ctrl", "alt", "cmd" }
-if HSVariants and HSVariants.has("windows-compat") then
-  -- windows-compat と組み合わせたときだけ変える処理
-end
-
-M.hotkeys = { hs.hotkey.bind(MOD, "n", function() hs.alert.show("hello") end) }
-```

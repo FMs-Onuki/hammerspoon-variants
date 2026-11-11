@@ -28,37 +28,45 @@ mkdir -p "$COPY"
 HOME="$WORK/home"
 export HOME
 mkdir -p "$HOME/.hammerspoon"
+
+# install.sh は hs コマンドで起動中の Hammerspoon を再読み込みする。
+# 実行中の Hammerspoon に触れないよう、常に失敗する hs を PATH の先頭に置く。
+mkdir -p "$WORK/bin"
+printf '#!/bin/sh\nexit 1\n' > "$WORK/bin/hs"
+chmod +x "$WORK/bin/hs"
+PATH="$WORK/bin:$PATH"
+export PATH
 cd "$COPY" || exit 1
 
 echo "既存の init.lua がある状態で導入する"
 echo '-- 利用者の設定' > "$WORK/original.lua"
 ln -s "$WORK/original.lua" "$HOME/.hammerspoon/init.lua"
-out="$(./install.sh windows-compat tiling-wm 2>&1)"
+out="$(./install.sh windows-compat window-manager 2>&1)"
 rc=$?
 check "終了コードが 0 である" "[ $rc -eq 0 ]"
 check "導入したことが表示される" "printf '%s' \"\$out\" | grep -q 'write  :'"
-check "選んだ設定名が表示される" "printf '%s' \"\$out\" | grep -q 'windows-compat tiling-wm'"
-check "再読み込みの案内まで到達する" "printf '%s' \"\$out\" | grep -q 'hs.reload()'"
+check "選んだ設定名が表示される" "printf '%s' \"\$out\" | grep -q 'windows-compat window-manager'"
+check "再読み込みの案内まで到達する" "printf '%s' \"\$out\" | grep -q '再読み込み'"
 check "退避したものがシンボリックリンクのまま残る" "[ -L \"\$HOME/.hammerspoon/init.lua.before-variants\" ]"
 check "複製先のパスを読み込む" "grep -q 'copy dir (test)' \"\$HOME/.hammerspoon/init.lua\""
-check "選んだ設定が両方書かれる" "grep -q '\"windows-compat\"' \"\$HOME/.hammerspoon/init.lua\" && grep -q '\"tiling-wm\"' \"\$HOME/.hammerspoon/init.lua\""
+check "選んだ設定が両方書かれる" "grep -q '\"windows-compat\"' \"\$HOME/.hammerspoon/init.lua\" && grep -q '\"window-manager\"' \"\$HOME/.hammerspoon/init.lua\""
 
 echo "設定を選び直す"
-out="$(./install.sh tiling-wm 2>&1)"
+out="$(./install.sh window-manager 2>&1)"
 rc=$?
 check "終了コードが 0 である" "[ $rc -eq 0 ]"
 check "退避したものを上書きしない" "[ \"\$(readlink \"\$HOME/.hammerspoon/init.lua.before-variants\")\" = \"$WORK/original.lua\" ]"
 check "選ばなかった設定が外れる" "! grep -q 'windows-compat' \"\$HOME/.hammerspoon/init.lua\""
 
 echo "同じ設定を重ねて指定する"
-./install.sh tiling-wm tiling-wm >/dev/null 2>&1
-check "一度だけ書かれる" "[ \"\$(grep -c '\"tiling-wm\"' \"\$HOME/.hammerspoon/init.lua\")\" -eq 1 ]"
+./install.sh window-manager window-manager >/dev/null 2>&1
+check "一度だけ書かれる" "[ \"\$(grep -c '\"window-manager\"' \"\$HOME/.hammerspoon/init.lua\")\" -eq 1 ]"
 
 echo "番号で選ぶ"
 out="$(printf '1 2\n' | ./install.sh 2>&1)"
 rc=$?
 check "終了コードが 0 である" "[ $rc -eq 0 ]"
-check "番号の分だけ導入される" "grep -q 'tiling-wm' \"\$HOME/.hammerspoon/init.lua\" && grep -q 'windows-compat' \"\$HOME/.hammerspoon/init.lua\""
+check "番号の分だけ導入される" "grep -q 'window-manager' \"\$HOME/.hammerspoon/init.lua\" && grep -q 'windows-compat' \"\$HOME/.hammerspoon/init.lua\""
 
 echo "一覧を表示する"
 check "--list に設定が並ぶ" "./install.sh --list | grep -q 'windows-compat'"
