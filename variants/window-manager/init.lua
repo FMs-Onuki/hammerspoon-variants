@@ -12,7 +12,7 @@
 --   ⌥+=      最大化
 --   ⌥+-      元の大きさに戻す（⌥+9 / 0 / = / g で動かす前の位置と大きさ）
 --   ⌥+g      グリッドを表示し、マス目を選んで手で配置する
---   ⌥+m      最小化（Dock にしまう。⌥+数字でそのアプリを選ぶと戻る）
+--   ⌥+m      最小化（Dock にしまう）。しまった直後にもう一度押すと元に戻す
 --
 -- windows-compat と組み合わせて導入した場合、windows-compat が ⌥ を Win キーとして使うため、
 -- 修飾キーを ⌥ → ⌃⌥ に置き換える（COMBINED_MOD で変更できる）。
@@ -327,7 +327,12 @@ local function restore()
   if not w then return end
   local id = w:id()
   local original = M.original[id]
-  if not original then return end
+  if not original or near(w:frame(), original) then
+    -- 何も起きないと効いていないように見えるので、戻す位置がないことを知らせる
+    hs.alert.show("戻す位置がない（⌥9 / 0 / = / g で動かす前の位置に戻す）", 1)
+    M.original[id] = nil
+    return
+  end
   w:setFrame(original, 0)
   M.original[id] = nil
   M.placed[id] = nil
@@ -344,9 +349,36 @@ local function showGrid()
   end)
 end
 
-local function minimize()
+local function focusedId()
   local w = hs.window.focusedWindow()
-  if w then w:minimize() end
+  return w and w:id() or false
+end
+
+-- 最小化。しまった直後にもう一度押すと、しまったウィンドウを元に戻す。
+-- しまうと macOS が別のウィンドウへフォーカスを移すので、そのフォーカス先を覚えておき、
+-- フォーカスがそこから動いていなければ「直後」とみなす。別のウィンドウを選んでから押すと、
+-- そのウィンドウをしまう。
+local FOCUS_SETTLE = 0.5
+
+local function toggleMinimize()
+  local last = M.minimizedWin
+  if last and last:isMinimized()
+    and (M.focusAfterMinimize == nil or M.focusAfterMinimize == focusedId()) then
+    last:unminimize()
+    last:focus()
+    M.minimizedWin = nil
+    return
+  end
+
+  local w = hs.window.focusedWindow()
+  if not w then return end
+  w:minimize()
+  M.minimizedWin = w
+  M.focusAfterMinimize = nil  -- フォーカスが移り終わるまでは「直後」とみなす
+  if M.minimizeTimer then M.minimizeTimer:stop() end
+  M.minimizeTimer = hs.timer.doAfter(FOCUS_SETTLE, function()
+    M.focusAfterMinimize = focusedId()
+  end)
 end
 
 -- ---------------------------------------------------------------------
@@ -371,7 +403,7 @@ bind(MOD, WINDOW_KEYS.right,    function() snap("right") end)
 bind(MOD, WINDOW_KEYS.maximize, maximize)
 bind(MOD, WINDOW_KEYS.restore,  restore)
 bind(MOD, WINDOW_KEYS.grid,     showGrid)
-bind(MOD, WINDOW_KEYS.minimize, minimize)
+bind(MOD, WINDOW_KEYS.minimize, toggleMinimize)
 
 hs.grid.setGrid(GRID_SIZE)
 hs.grid.setMargins("0x0")

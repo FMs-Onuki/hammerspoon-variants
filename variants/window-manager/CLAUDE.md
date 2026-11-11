@@ -4,7 +4,7 @@ App switching on ⌥+digits and window placement on ⌥+keys. See the repo root 
 conventions.
 
 - Keys: ⌥1–8 apps, ⌥9 / ⌥0 left / right, ⌥= maximize, ⌥- restore, ⌥G grid,
-  ⌥M minimize. Settings: `APPS` / `APP_KEYS`, `WINDOW_KEYS`, `GRID_SIZE`, `MOD`.
+  ⌥M minimize (pressing again right after restores it). Settings: `APPS` / `APP_KEYS`, `WINDOW_KEYS`, `GRID_SIZE`, `MOD`.
 - When combined with windows-compat (`HSVariants.has("windows-compat")`), `MOD` is replaced by
   `COMBINED_MOD` (⌃⌥) because windows-compat owns ⌥ (including ⌥1–9).
 - Design rule: **pressing the same key again advances** (next window, next snap width).
