@@ -1,0 +1,31 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    # install.sh は #!/bin/sh で動く。macOS の sh は bash 3.2 であり、
+    # Linux の sh（dash）では再現しない不具合があるため、macOS で確認する。
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install.sh の構文チェック
+        run: sh -n install.sh
+      - name: install.sh のテスト
+        run: sh tests/install-test.sh
+
+  lua-syntax:
+    # Hammerspoon は Lua 5.4 を使う。macOS のランナーには luac がないため、Linux で確認する。
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lua 5.4 を入れる
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Lua の構文チェック
+        run: luac5.4 -p loader.lua variants/*/init.lua
