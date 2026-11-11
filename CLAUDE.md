@@ -14,7 +14,7 @@ tests/
   install-test.sh  Checks install.sh end to end against a throwaway $HOME
 variants/
   windows-compat/  Windows key bindings on macOS (Ctrl→⌘, Win→⌥ snap/shortcuts, Alt+Tab, Finder, screenshots)
-  tiling-wm/       Keyboard-driven tiling + app focus (⌥ / ⌃⌥ layers)
+  window-manager/  App switching (⌥1–8) + window placement (⌥9/0/-/M)
 ```
 
 Each variant directory contains exactly:
@@ -37,17 +37,17 @@ The SMC-PAD MIDI config lives in the separate `hammerspoon-smcpad` repo.
   `~/.hammerspoon/init.lua` (backup: `init.lua.before-variants`, never overwritten). `loader.lua`
   sets `HSVariants` before loading anything:
   - `HSVariants.has(name)`: whether `name` is also selected (order-independent). Use it to shift a
-    variant's keys when combined (see tiling-wm `COMBINED_*`).
+    variant's keys when combined (see window-manager `COMBINED_MOD`).
   - `HSVariants.claim(mods, key)`: register keys handled outside `hs.hotkey` (eventtaps). Keys bound
     with `hs.hotkey.new/bind` during load are recorded automatically; duplicates across variants are
     shown as an alert and `[variants] キーの重複:` console lines.
   - Variants must not modify other variants' tables or `HSVariants`.
-- Current combination rule: windows-compat owns ⌥ (Win key), ⌃ (Ctrl→⌘), ⌘Tab/⌘F4. tiling-wm moves to
-  ⌃⌥ / ⌃⌥⇧ / ⌃⌥⌘ when combined with it. Check that the combined set has no conflicts when keys change.
+- Current combination rule: windows-compat owns ⌥ (Win key), ⌃ (Ctrl→⌘), ⌘Tab/⌘F4. window-manager moves to
+  ⌃⌥ when combined with it. Check that the combined set has no conflicts when keys change.
 - `init.lua` structure: header comment listing features/keys → user settings between `▼▼▼` and
   `▲▲▲` → implementation.
 - Long-lived objects (eventtaps, watchers, timers, hotkeys) are stored in one global namespace
-  table per variant (`WinCompat`, `TilingWM`) so they survive GC and can be cleaned
+  table per variant (`WinCompat`, `WindowManager`) so they survive GC and can be cleaned
   up / reused across `hs.reload()`.
 - Apps are resolved by `bundleIDs` (in order) with `name` as fallback; missing apps must not error.
 - The variant must not change macOS system settings; quitting Hammerspoon undoes everything.

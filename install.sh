@@ -1,9 +1,9 @@
 #!/bin/sh
 # hammerspoon-variants のインストール / アンインストール
-#   ./install.sh                            一覧から番号で選んで導入する
-#   ./install.sh windows-compat tiling-wm   指定した設定を組み合わせて導入する（1つでもよい）
-#   ./install.sh --list                     導入できる設定の一覧を表示する
-#   ./install.sh --uninstall                導入前の init.lua に戻す
+#   ./install.sh                                 一覧から番号で選んで導入する
+#   ./install.sh windows-compat window-manager   指定した設定を組み合わせて導入する（1つでもよい）
+#   ./install.sh --list                          導入できる設定の一覧を表示する
+#   ./install.sh --uninstall                     導入前の init.lua に戻す
 #
 # ~/.hammerspoon/init.lua には、選んだ設定を loader.lua 経由で読み込む数行のファイルを生成する。
 # 導入前の init.lua は init.lua.before-variants に退避する。選び直すときは再実行するだけでよい。
@@ -15,12 +15,17 @@ BAK="$HOME/.hammerspoon/init.lua.before-variants"
 MARK="-- hammerspoon-variants: install.sh が生成したファイル"
 
 reload() {
-  # Hammerspoon が起動中かつ hs コマンドが利用可能な場合は、設定を再読み込みする
-  if command -v hs >/dev/null 2>&1 && pgrep -q Hammerspoon; then
+  # Hammerspoon が起動中かつ hs コマンドが利用可能な場合は、設定を再読み込みする。
+  # hs コマンドは今読み込まれている設定が hs.ipc を有効にしている場合だけ接続できる。
+  # 初めて導入するときは元の設定が hs.ipc を使っていないことが多いため、失敗したら手動での再読み込みを案内する。
+  # hs.reload() は応答を返す前に設定を読み直すため、終了コードは成否の判定に使えない。接続できるかを先に確かめる。
+  if command -v hs >/dev/null 2>&1 && pgrep -q Hammerspoon \
+     && hs -c 'return 1' >/dev/null 2>&1; then
     hs -c 'hs.reload()' >/dev/null 2>&1 || true
     echo "Hammerspoon の設定を再読み込みした。"
   else
-    echo "Hammerspoon コンソールで hs.reload() を実行すること。"
+    echo "Hammerspoon の設定を再読み込みすること（メニューバーの Hammerspoon アイコン → Reload Config、"
+    echo "またはコンソールで hs.reload()）。"
   fi
 }
 
