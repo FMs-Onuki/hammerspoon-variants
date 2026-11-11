@@ -12,18 +12,13 @@ for shared conventions.
 - ⌘Tab uses `hs.window.switcher` (per-window), ⌘F4 closes the window, or quits
   the app on its last standard window (Finder is never quit).
 - Every keyDown gets a decision (pass / consume / rewrite) stored in `WinCompat.decisions`, and the
-  matching keyUp reuses it. Win-key (⌥) shortcuts and PrintScreen are handled inside the eventtap
+  matching keyUp reuses it. Win-key (⌥) shortcuts are handled inside the eventtap
   (not `hs.hotkey`) so that keys rewritten to ⌥ (⌃←/→, ⌃Backspace) never trigger them; their actions
   run via `hs.timer.doAfter(0)` to keep the tap callback fast. ⌥ shortcuts ignore `EXCLUDE_APPS`.
-- Finder rules (Enter/F2/Delete/Backspace, ⌃X→⌃V move) are skipped while a text field is focused.
-- Screenshots use the `screencapture` CLI instead of synthetic keystrokes.
-- Shortcuts that also apply in `EXCLUDE_APPS`: ⌥ keys, PrintScreen (F13), F11, ⌘` (IME, sends
-  英数/かな keycodes 102/104), ⌃⇧Esc, ⌃⌘Delete (synthetic ⌥⌘Esc). F5 → ⌘R respects `EXCLUDE_APPS`.
+- F5 → ⌘R respects `EXCLUDE_APPS`.
 - ⌥1〜⌥9 come from `TASKBAR_APPS` (bundleIDs with name fallback; cycles windows by id when frontmost).
 - Clipboard history (⌥V) is stored in `hs.settings` under `WinCompat.clipHistory`; concealed/transient
   pasteboard types are skipped.
-- A separate `scrollWheel` eventtap negates discrete (non-continuous) wheel deltas only when
-  `hs.mouse.scrollDirection()` is "natural".
 - The cheat sheet (⌥/) is an `hs.alert`; first-load display is recorded in `hs.settings`.
 - On/off toggle: menubar "Win"/"Mac" item or ⌃⌥⌘W. Disabled mode must pass every key through.
 - ⌃←/→ collides with the macOS Space-switching shortcut; the README tells users how to turn that off.

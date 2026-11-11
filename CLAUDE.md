@@ -13,7 +13,7 @@ loader.lua         Loads the picked variants (pcall each), tracks keys, warns on
 tests/
   install-test.sh  Checks install.sh end to end against a throwaway $HOME
 variants/
-  windows-compat/  Windows key bindings on macOS (Ctrl→⌘, Win→⌥ snap/shortcuts, Alt+Tab, Finder, screenshots)
+  windows-compat/  Windows key bindings on macOS (Ctrl→⌘, Win→⌥ snap/shortcuts, Alt+Tab, clipboard history)
   window-manager/  App switching (⌥1–8) + window placement (⌥9/0/=/-/G/M)
 ```
 
