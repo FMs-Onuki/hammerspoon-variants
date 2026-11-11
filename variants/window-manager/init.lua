@@ -329,7 +329,7 @@ local function restore()
   local original = M.original[id]
   if not original or near(w:frame(), original) then
     -- 何も起きないと効いていないように見えるので、戻す位置がないことを知らせる
-    hs.alert.show("戻す位置がない（⌥9 / 0 / = / g で動かす前の位置に戻す）", 1)
+    hs.alert.show("No undo history", 1)
     M.original[id] = nil
     return
   end
